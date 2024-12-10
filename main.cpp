@@ -79,7 +79,7 @@ int main() {
         std::cout << "Received request:\n" << buffer << "\n";
 
         // 7. чтение html
-        std::string htmlContent = readHtmlFile("links.html");
+        std::string htmlContent = readHtmlFile("mainPage.html");
 
         // 8. http ответ
         std::string httpResponse = 
