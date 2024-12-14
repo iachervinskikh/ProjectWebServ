@@ -20,6 +20,30 @@ std::string readHtmlFile(const std::string &filePath) {
     return content;
 }
 
+std::string handleRequest(const std::string &request) {
+    // Получение первой строки запроса (метод, путь, HTTP-версия)
+    std::string firstLine = request.substr(0, request.find("\r\n"));
+    std::cout << "Request line: " << firstLine << std::endl;
+
+    // Извлечение пути из запроса
+    size_t start = firstLine.find(' ') + 1;
+    size_t end = firstLine.find(' ', start);
+    std::string path = firstLine.substr(start, end - start);
+    std :: cout << "Path:" << path << std ::endl;
+    // Если путь пустой или "/", возвращаем главную страницу
+    if (path == "/" || path.empty()) {
+        return readHtmlFile("mainPage.html");
+    } 
+
+    // Обработка других страниц
+    else if (path == "/T-shirt.html") {
+        return readHtmlFile("ArticlesPages/T-shirt.html");
+    } else {
+        // Если страница не найдена
+        return "<html><body><h1>404 Not Found</h1><p>Page not found.</p></body></html>";
+    }
+}
+
 int main() {
     WSADATA wsaData;
     if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
@@ -55,8 +79,15 @@ int main() {
         close(server_fd);
         return 1;
     }
+    int opt = 1;
+    if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, sizeof(opt)) < 0) {
+        perror("setsockopt failed");
+        close(server_fd);
+        return 1;
+    }
+ 
 
-    // listen прослушивает запрос браузера и выдаёт 0, если сокер создан и количество подключений не превышает нормы
+    // listen прослушивает запрос браузера и выдаёт 0, если сокет создан и количество подключений не превышает нормы
     if (listen(server_fd, BACKLOG) != 0) {
         perror("Listen failed");
         close(server_fd);
@@ -69,25 +100,44 @@ int main() {
         // 5. принятие подключения
         int client_socket = accept(server_fd, nullptr, nullptr);
         if (client_socket < 0) {
-            perror("Accept failed");
+            std :: cout << "Accept failed";
             continue;
         }
+        std::cout << "Client connected\n";
 
         // 6. чтение запроса
         char buffer[1024] = {0};
-        read(client_socket, buffer, sizeof(buffer));
-        std::cout << "Received request:\n" << buffer << "\n";
+        ssize_t bytesRead = 0;
+        std::string request;
+        do {
+            bytesRead = recv(client_socket, buffer, sizeof(buffer) - 1, 0);
+            if (bytesRead > 0) {
+                buffer[bytesRead] = '\0';
+                request += buffer; // Добавляем прочитанные данные в строку
+            }
+        } while (bytesRead > 0);
 
-        // 7. чтение html
-        std::string htmlContent = readHtmlFile("mainPage.html");
+        if (request.empty()) {
+            std::cerr << "Failed to read from client or connection closed.\n" << buffer << "\n";
+        } else {
+            std::cout << "Received request:\n" << request << "\n";
+        }
 
-        // 8. http ответ
+        // 7. обработка запроса
+        std::string htmlContent = handleRequest(std:: string(buffer));
+        std::cout << "HTML Content:\n" << htmlContent << std::endl;
+
+        // 8. http-ответ
         std::string httpResponse = 
-            "HTTP/1.1 200 OK\r\n"
-            "Content-Type: text/html; charset=UTF-8\r\n"
-            "\r\n" +
-            htmlContent;
-        send(client_socket, httpResponse.c_str(), httpResponse.size(), 0); // 9. Отправка ответа клиенту
+           "HTTP/1.1 200 OK\r\n"
+           "Content-Type: text/html; charset=UTF-8\r\n"
+           "\r\n" +
+           htmlContent;
+
+        // 9. отправка ответа клиенту
+        std::cout << "HTTP Response Sent:\n" << httpResponse << std::endl;
+
+        send(client_socket, httpResponse.c_str(), httpResponse.size(), 0); 
 
         // 10. закрыть клиентский сокет
         close(client_socket);
