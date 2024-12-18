@@ -36,9 +36,30 @@ std::string handleRequest(const std::string &request) {
     } 
 
     // Обработка других страниц
-    else if (path == "/T-shirt.html") {
+    else if (path == "/ArticlesPages/T-shirt.html") {
         return readHtmlFile("ArticlesPages/T-shirt.html");
-    } else {
+    }
+    else if (path == "/ArticlesPages/Cap.html") {
+        return readHtmlFile("ArticlesPages/Cap.html");
+    }
+    else if (path == "/ArticlesPages/Gloves.html") {
+        return readHtmlFile("ArticlesPages/Gloves.html");
+    }
+    else if (path == "/ArticlesPages/Polo.html") {
+        return readHtmlFile("ArticlesPages/Polo.html");
+    }
+    else if (path == "/ArticlesPages/Scarf.html") {
+        return readHtmlFile("ArticlesPages/Scarf.html");
+    }
+    else if (path == "/ArticlesPages/Socks.html") {
+        return readHtmlFile("ArticlesPages/Socks.html");
+    }
+    else if (path == "/ArticlesPages/Sunglasses.html") {
+        return readHtmlFile("ArticlesPages/Sunglasses.html");
+    }
+    else if (path == "/ArticlesPages/Sweater.html") {
+        return readHtmlFile("ArticlesPages/Sweater.html");
+    }else {
         // Если страница не найдена
         return "<html><body><h1>404 Not Found</h1><p>Page not found.</p></body></html>";
     }
@@ -119,9 +140,11 @@ int main() {
            "HTTP/1.1 200 OK\r\n"
            "Content-Type: text/html; charset=UTF-8\r\n"
            "Content-Length: " + std::to_string(htmlContent.size()) + "\r\n"  // Заголовок с длиной содержимого
-           "\r\n" + htmlContent;
+           "\r\n" + htmlContent +
+           "\r\n";
 
         // 9. отправка ответа клиенту
+        send(client_socket, httpResponse.c_str(), httpResponse.size(), 0);
         std::cout << "HTTP Response Sent:\n" << httpResponse << std::endl;
 
 
