@@ -103,25 +103,12 @@ int main() {
             std :: cout << "Accept failed";
             continue;
         }
-        std::cout << "Client connected\n";
+
 
         // 6. чтение запроса
         char buffer[1024] = {0};
-        ssize_t bytesRead = 0;
-        std::string request;
-        do {
-            bytesRead = recv(client_socket, buffer, sizeof(buffer) - 1, 0);
-            if (bytesRead > 0) {
-                buffer[bytesRead] = '\0';
-                request += buffer; // Добавляем прочитанные данные в строку
-            }
-        } while (bytesRead > 0);
-
-        if (request.empty()) {
-            std::cerr << "Failed to read from client or connection closed.\n" << buffer << "\n";
-        } else {
-            std::cout << "Received request:\n" << request << "\n";
-        }
+        recv(client_socket, buffer, sizeof(buffer), 0);
+        std::cout << "Received request:\n" << buffer << "\n";
 
         // 7. обработка запроса
         std::string htmlContent = handleRequest(std:: string(buffer));
@@ -131,13 +118,12 @@ int main() {
         std::string httpResponse = 
            "HTTP/1.1 200 OK\r\n"
            "Content-Type: text/html; charset=UTF-8\r\n"
-           "\r\n" +
-           htmlContent;
+           "Content-Length: " + std::to_string(htmlContent.size()) + "\r\n"  // Заголовок с длиной содержимого
+           "\r\n" + htmlContent;
 
         // 9. отправка ответа клиенту
         std::cout << "HTTP Response Sent:\n" << httpResponse << std::endl;
 
-        send(client_socket, httpResponse.c_str(), httpResponse.size(), 0); 
 
         // 10. закрыть клиентский сокет
         close(client_socket);
